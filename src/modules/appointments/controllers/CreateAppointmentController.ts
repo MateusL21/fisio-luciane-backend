@@ -1,24 +1,36 @@
 import { Request, Response } from "express";
-import { z } from "zod";
-import { AppointmentRepository } from "../repositories/AppointmentRepository";
 import { CreateAppointmentService } from "../services/CreateAppointmentService";
-
-const createAppointmentSchema = z.object({
-  name: z.string().min(3),
-  phone: z.string().min(10),
-  problem: z.string().min(5),
-  address: z.string().min(5),
-});
+import { AppointmentRepository } from "../repositories/AppointmentRepository";
+import { createAppointmentSchema } from "../dtos/CreateAppointmentDTO";
+import { ZodError, treeifyError } from "zod";
 
 export class CreateAppointmentController {
   async handle(req: Request, res: Response) {
-    const data = createAppointmentSchema.parse(req.body);
+    try {
+      // Valida os dados com Zod
+      const data = createAppointmentSchema.parse(req.body);
 
-    const repository = new AppointmentRepository();
-    const service = new CreateAppointmentService(repository);
+      // Injeção de dependências
+      const repository = new AppointmentRepository();
+      const service = new CreateAppointmentService(repository);
 
-    const appointment = await service.execute(data);
+      // Executa o service
+      const appointment = await service.execute(data);
 
-    return res.status(201).json(appointment);
+      return res.status(201).json(appointment);
+    } catch (error) {
+      // Tratamento específico para erros do Zod
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          error: "Dados inválidos",
+          details: treeifyError(error) // Usando treeifyError
+        });
+      }
+      
+      // Erro genérico
+      return res.status(500).json({
+        error: "Erro interno do servidor"
+      });
+    }
   }
 }

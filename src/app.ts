@@ -3,22 +3,21 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { CreateAppointmentController } from "./modules/appointments/controllers/CreateAppointmentController";
+import { routes } from "./routes";
 import { errorHandler } from "./shared/middlewares/errorHandler";
 
 const app = express();
 
+// Middlewares globais
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 
-const createAppointmentController = new CreateAppointmentController();
+// Rotas
+app.use(routes);
 
-app.post("/appointments", (req, res) =>
-  createAppointmentController.handle(req, res)
-);
-
+// Error handler (deve ser o último)
 app.use(errorHandler);
 
 export { app };
